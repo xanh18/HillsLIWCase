@@ -7,6 +7,7 @@ from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.svm import SVR
+from sklearn.linear_model import Lasso
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
@@ -14,21 +15,20 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import joblib
 
 # Load the dataset
-data = pd.read_csv('out/etl.csv', sep=";", decimal=",")
+data = pd.read_csv('../data/dataset met dieten.csv', sep=";", decimal=",")
 
 # Feature selection
 print("Extracting features")
 features = data[[
-	'Density_Target',
-	'Dry_Feed_Rate_PID.SP',
-	#'Dry_Feed_Rate_PID.PV',
+	'Density',
+	'PV',
 	'Line 1',
 	'Line 2',
 	'Line 3'
 ]]
 
 # Target variable
-target = data['Dry_Feed_Rate_PID.OUT']
+target = data['OUT']
 
 # Data preprocessing
 scaler = StandardScaler()
@@ -42,7 +42,8 @@ models = {
 	"LinearRegression": LinearRegression(),
 	"DecisionTree": DecisionTreeRegressor(),
 	"GradientBoosting": GradientBoostingRegressor(),
-	#"SVR": SVR(),
+	"SVR": SVR(),
+	"Lasso": Lasso(),
 	"RandomForest": RandomForestRegressor(),
 	"HistGradientBoosting": HistGradientBoostingRegressor(),
 }
@@ -53,6 +54,9 @@ if (os.path.exists("out") == False):
 
 if (os.path.exists("out/models") == False):
 	os.mkdir("out/models")
+
+if (os.path.exists("out/dieten met density") == False):
+	os.mkdir("out/dieten met density")
 
 joblib.dump(scaler, 'out/Scaler.pkl')
 
@@ -67,9 +71,9 @@ for model_name in models:
 	mae = mean_absolute_error(y_test, predictions)
 	r2 = r2_score(y_test, predictions)
 
-	table = pd.DataFrame([[ score, mse, mae, r2]], index=[model_name], columns=["Score", "MSE", "MAE", "R2"])
+	table = pd.DataFrame([[score, mse, mae, r2]], index=[model_name], columns=["Score", "MSE", "MAE", "R2"])
 	
 	print("")
 	print(table)
 
-	joblib.dump(model, f'out/models/{model_name}.pkl')
+	joblib.dump(model, f'out/dieten met density/{model_name}.pkl')
