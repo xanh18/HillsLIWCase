@@ -1,44 +1,65 @@
-# Dependencies for this notebook
-import numpy as np
-import pandas as pd
-
 # Ignore warning for this project
+import os, joblib, argparse, pandas as pd
 import warnings
 warnings.filterwarnings("ignore")
 
-import os
-import joblib
+from parser import keyvalue
 
-# Load the dataset
-df = pd.read_csv("../data/Verificatie Dataset dieten met density.csv", sep=";")
+def predict(input: str, output: str, model_names: list[str] = [], mapper: dict[str, str] = {}):
 
-validation = df["Prediction.OUT"]
-input = df[["Density", "PV", "Line 1", "Line 2", "Line 3"]]
+	# Load the dataset
+	data = pd.read_csv(input, sep=";", decimal=",")
+	data = data.rename(columns=mapper)
+	
+	print(f"Predict: {input}")
 
-models = os.listdir("out/dieten met density")
-scaler = joblib.load("out/Scaler.pkl")
-scaled_input = scaler.transform(input)
+	if (os.path.exists(output) == False):
+		os.makedirs(output)
 
-if (os.path.exists("out/predictions") == False):
-	os.mkdir("out/predictions")
+	models = {}
+	scalers = {}
+	for model_path in os.listdir(output):
+		base_name = os.path.basename(model_path)
+		
+		# Ignore directories
+		if(os.path.isdir(base_name)):
+			continue
 
-if (os.path.exists("out/dieten met density") == False):
-	os.mkdir("out/dieten met density")
+		model_name = base_name.replace(".pkl", "")
+		
+		# Ignore non model files
+		if base_name.endswith(".pkl") == False or base_name.endswith("Scaler.pkl"):
+			continue
 
-for model_file in models:
-	model_name = model_file.replace(".pkl", "")
-	model = joblib.load(f"out/dieten met density/{model_file}")
-	predictions = model.predict(scaled_input)
+		scaler = os.path.join(output, f"{model_name}Scaler.pkl")
+		if os.path.exists(scaler) == False:
+			print(f"Scaler is missing for model {model_name}")
+			continue
 
-	output = pd.DataFrame({ 
-		#"qm_spec_id":  df["qm_spec_id"],
-		"Line 1":  df["Line 1"], 
-		"Line 2":  df["Line 2"], 
-		"Line 3":  df["Line 3"], 
-		"Density":  df["Density"],
-		"PV": df["PV"],
-		"Prediction.OUT": predictions, 
-		"Validation.OUT": validation 
-	})
+		# Append to models dictionary
+		if len(model_names) == 0 or model_name in model_names:
+			models[model_name] = os.path.join(output, base_name)
+			scalers[model_name] = scaler
+	
+	for model_name in models:
+		model = joblib.load(models[model_name])
+		scaler = joblib.load(scalers[model_name])
+		
+		# Get features from dataset
+		features = data[model.feature_names]
+		scaled_input = scaler.transform(features)
+		data[f"{model_name}"] = model.predict(scaled_input)
 
-	output.to_csv(f"../out/dieten met density/{model_name}.csv", index=False, sep=";", decimal=",")
+	data.to_csv(f"{output}/Predictions.csv", index=False, sep=";", decimal=",")
+
+def parse_arguments():
+	argParser = argparse.ArgumentParser()
+	argParser.add_argument("-i", "--input", required=True, type=str, help="Input CSV file")
+	argParser.add_argument("-o", "--output", default=".", type=str, help="Output directory")
+	argParser.add_argument("-m", "--models", type=str, nargs='+', default=[], help="Model names")
+	argParser.add_argument('--mapper', type=str, default={}, nargs='*', action = keyvalue) 
+	return argParser.parse_args()
+
+if __name__ == "__main__":
+	args = parse_arguments()
+	predict(args.input, args.output, args.models, args.mapper)
