@@ -1,9 +1,10 @@
 # Ignore warning for this project
 import os, joblib, argparse, pandas as pd
 import warnings
-warnings.filterwarnings("ignore")
 
-from parser import keyvalue
+from scripts.parser import keyvalue
+
+warnings.filterwarnings("ignore")
 
 def predict(input: str, output: str, model_names: list[str] = [], mapper: dict[str, str] = {}):
 
