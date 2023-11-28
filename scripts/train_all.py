@@ -1,4 +1,5 @@
 # Import the train method from train.py
+from explore import explore
 from train import train
 from predict import predict
 
@@ -14,11 +15,17 @@ def train_all():
 		"Line 3 met density",
 		"Line 1 zonder density",
 		"Line 2 zonder density",
+		"Line 3 zonder density",
 		#"Dataset per dieet en lijn test"
 	]
 
 	# Train variants
 	for variant in variants:
+		explore(
+			input=f"data/20231120 Dataset {variant}.csv",
+			output=f"out/{variant}",
+			#prefix= f"{variant} - "
+		)
 		train(
 			input=f"data/20231120 Dataset {variant}.csv", 
 			output=f"out/{variant}",
