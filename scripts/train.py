@@ -2,7 +2,7 @@ import os, joblib, argparse, pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor, HistGradientBoostingRegressor
-from sklearn.svm import SVR
+from sklearn.svm import LinearSVR
 from sklearn.linear_model import Lasso
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.preprocessing import StandardScaler
@@ -24,6 +24,11 @@ def train(input: str, output: str, target_name: str = 'OUT', feature_names: list
 	# Load the dataset
 	data = pd.read_csv(input, sep=";", decimal=",")
 	data = data.rename(columns=mapper)
+
+	#check Datetime and encode this.
+
+	if 'DateTime' in data.columns:
+		print('ok')
 
 	# Check if target is in dataset
 	if (target_name in data.columns.values) == False:
@@ -56,7 +61,7 @@ def train(input: str, output: str, target_name: str = 'OUT', feature_names: list
 		"LinearRegression": LinearRegression(),
 		"DecisionTree": DecisionTreeRegressor(),
 		"GradientBoosting": GradientBoostingRegressor(),
-		"SVR": SVR(),
+		"LinearSVR": LinearSVR(max_iter=1000),
 		"Lasso": Lasso(),
 		"RandomForest": RandomForestRegressor(),
 		"HistGradientBoosting": HistGradientBoostingRegressor(),
