@@ -1,4 +1,4 @@
-import os, joblib, argparse, pandas as pd
+import os, joblib, argparse, pandas as pd, json
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor, HistGradientBoostingRegressor
@@ -7,7 +7,7 @@ from sklearn.linear_model import Lasso
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-from scripts.parser import keyvalue
+from parser import keyvalue
 
 def train(input: str, output: str, target_name: str = 'OUT', feature_names: list[str] = [], model_names: list[str] = [], mapper: dict[str, str] = {}):
 
@@ -73,30 +73,48 @@ def train(input: str, output: str, target_name: str = 'OUT', feature_names: list
 	if (os.path.exists(output) == False):
 		os.makedirs(output)
 
+	train_info = {
+		"features": feature_names,
+		"models": list()
+	}
+
 	for model_name in model_names:
 		
 		# Check if model is in models dict
 		if((model_name in models.keys()) == False):
 			continue
 
+		print(f"Training model {model_name}")
+
 		model = models[model_name]
 		model.fit(X_train, y_train)
 		predictions = model.predict(X_test)
-		score = model.score(X_test, y_test)
 
 		# Evaluate the model
 		mse = mean_squared_error(y_test, predictions)
 		mae = mean_absolute_error(y_test, predictions)
 		r2 = r2_score(y_test, predictions)
 
-		table = pd.DataFrame([[score, mse, mae, r2]], index=[model_name], columns=["Score", "MSE", "MAE", "R2"])
+		table = pd.DataFrame([[mse, mae, r2]], index=[model_name], columns=["MSE", "MAE", "R2"])
 	
-		print("")
+		print("Score: ")
 		print(table)
+
+		train_info["models"].append({
+			"name": model_name,
+			"mse": mse,
+			"mae": mae,
+			"r2": r2
+		})
 
 		model.feature_names = list(feature_names)
 		joblib.dump(scaler, f"{output}/{model_name}Scaler.pkl")
 		joblib.dump(model, f'{output}/{model_name}.pkl')
+		print("Model written to disk")
+	
+	# Writing to sample.json
+	with open(f"{output}/train.json", "w") as outfile:
+		outfile.write(json.dumps(train_info, indent=4))
 
 def parse_arguments():
 	argParser = argparse.ArgumentParser()

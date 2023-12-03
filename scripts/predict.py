@@ -2,7 +2,7 @@
 import os, joblib, argparse, pandas as pd
 import warnings
 
-from scripts.parser import keyvalue
+from parser import keyvalue
 
 warnings.filterwarnings("ignore")
 
