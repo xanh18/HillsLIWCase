@@ -9,6 +9,10 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from parser import keyvalue
 
+# Ignore warning for this project
+import warnings
+warnings.filterwarnings("ignore")
+
 def train(input: str, output: str, target_name: str = 'OUT', feature_names: list[str] = [], model_names: list[str] = [], mapper: dict[str, str] = {}):
 
 	if os.path.exists(input) == False:
